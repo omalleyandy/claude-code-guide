@@ -1,0 +1,187 @@
+name: Sync Anthropic Release Notes
+
+on:
+  schedule:
+    # Runs once every 24h at 00:15 UTC
+    - cron: "15 0 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-release-notes
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Download latest Markdown files and stage real changes
+        id: sync_files
+        run: |
+          set -euo pipefail
+
+          FOLDER="Official Claude Releases"
+          mkdir -p "$FOLDER"
+
+          # ✅ FIXED: Using only working raw GitHub URLs
+          # The docs.anthropic.com URLs don't serve raw markdown, so they've been removed
+          FILES=(
+            "https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md|claude-code-CHANGELOG.md"
+          )
+
+          CHANGED_FILES=()
+          COMMIT_BODY=""
+          README_LIST=""
+
+          for entry in "${FILES[@]}"; do
+            IFS="|" read -r URL NAME <<< "$entry"
+            OUT="$FOLDER/$NAME"
+            TMP="$OUT.tmp"
+
+            echo "Fetching $URL -> $OUT"
+            curl -fsSL -H "Accept: text/markdown, text/plain;q=0.9, text/x-markdown;q=0.9, */*;q=0.1" "$URL" -o "$TMP"
+
+            if [[ -f "$OUT" ]]; then
+              # Skip if identical ignoring whitespace (use git diff for consistency)
+              if git --no-pager diff --no-index --ignore-all-space --quiet -- "$OUT" "$TMP"; then
+                echo "No substantive changes for $NAME"
+                rm -f "$TMP"
+                continue
+              fi
+            fi
+
+            BASE="$OUT"
+            [[ -f "$OUT" ]] || BASE="/dev/null"
+
+            # Real added/deleted line counts (git diff --numstat)
+            NUMSTAT=$(git --no-pager diff --no-index --numstat -- "$BASE" "$TMP" || true)
+            read -r ADDED DELETED _ <<< "${NUMSTAT:-0 0 -}"
+
+            # Highlights: first few added headings/bullets (fallback to a few added lines)
+            HILITES=$(
+              git --no-pager diff --no-index -U0 -- "$BASE" "$TMP" \
+                | sed -n 's/^+[^+].*/\0/p' \
+                | sed 's/^+//' \
+                | grep -E '^(#|##|###|- |\* )' \
+                | head -n 6 || true
+            )
+            if [[ -z "$HILITES" ]]; then
+              HILITES=$(
+                git --no-pager diff --no-index -U0 -- "$BASE" "$TMP" \
+                  | sed -n 's/^+[^+].*/\0/p' \
+                  | sed 's/^+//' \
+                  | head -n 3 || true
+              )
+            fi
+
+            # Replace file and record it as changed
+            mv -f "$TMP" "$OUT"
+            CHANGED_FILES+=("$OUT")
+
+            # Build commit body + README summary
+            COMMIT_BODY+=$'- '"$NAME"' (+'"${ADDED:-0}"' / -'"${DELETED:-0}"')\n'
+            if [[ -n "$HILITES" ]]; then
+              while IFS= read -r line; do
+                COMMIT_BODY+="    • ${line}\n"
+              done <<< "$HILITES"
+            fi
+            README_LIST+="- ${NAME} (+${ADDED:-0} / -${DELETED:-0})"$'\n'
+          done
+
+          # Stage only actually changed files
+          if [[ ${#CHANGED_FILES[@]} -gt 0 ]]; then
+            git add "${CHANGED_FILES[@]}"
+          fi
+
+          # Persist data for later steps
+          printf '%b' "$COMMIT_BODY" > /tmp/commit_body.txt
+          printf '%b' "$README_LIST" > /tmp/readme_list.txt
+
+      - name: Update status in 'Official Claude Releases/README.md' (always)
+        run: |
+          set -euo pipefail
+
+          FOLDER="Official Claude Releases"
+          README="$FOLDER/README.md"
+
+          DATE_UTC="$(date -u +'%Y-%m-%d %H:%M %Z')"
+          DATE_OSLO="$(TZ=Europe/Oslo date +'%Y-%m-%d %H:%M %Z')"
+          README_LIST="$(cat /tmp/readme_list.txt 2>/dev/null || true)"
+
+          STATUS_START="<!-- sync-status:start -->"
+          STATUS_END="<!-- sync-status:end -->"
+
+          # Build the status block
+          {
+            echo "$STATUS_START"
+            echo
+            echo "### 🔄 Last sync"
+            echo "- UTC: \`$DATE_UTC\`"
+            echo "- Europe/Oslo: \`$DATE_OSLO\`"
+            echo
+            if [[ -n "$README_LIST" ]]; then
+              echo "### ✅ Files updated this run"
+              echo
+              printf "%b" "$README_LIST"
+            else
+              echo "### ℹ️ No content changes in tracked files this run"
+              echo
+            fi
+            echo "$STATUS_END"
+          } > /tmp/status_block.md
+
+          # Ensure README exists (no heredocs; safe in YAML)
+          if [[ ! -f "$README" ]]; then
+            mkdir -p "$FOLDER"
+            {
+              echo "# Official Claude Releases"
+              echo
+              echo "This folder mirrors selected Anthropic release notes for easy tracking. The status section below is updated by a daily GitHub Action."
+              echo
+            } > "$README"
+          fi
+
+          # Replace existing block or append
+          if grep -q "$STATUS_START" "$README"; then
+            perl -0777 -pe 'BEGIN{undef $/; open my $fh,"<","/tmp/status_block.md"; our $blk=do{local $/;<$fh>}} s/<!-- sync-status:start -->.*?<!-- sync-status:end -->/$blk/s' -i "$README"
+          else
+            {
+              echo
+              echo "---"
+              echo
+              cat /tmp/status_block.md
+            } >> "$README"
+          fi
+
+          # Always stage this README so there is a visible run marker
+          git add "$README"
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          TITLE="Latest Anthropic release notes ($(date -u +%F))"
+          BODY=$(cat /tmp/commit_body.txt 2>/dev/null || true)
+
+          FOLDER="Official Claude Releases"
+          README_PATH="$FOLDER/README.md"
+
+          # If anything besides the README is staged, include the detailed body
+          if git diff --cached --name-only | grep -F -v -- "$README_PATH" | grep -q .; then
+            git commit -m "$TITLE" -m "$BODY"
+          else
+            git commit -m "$TITLE" -m "No release-note content changes; updated status in '$README_PATH'."
+          fi
+
+          git push
