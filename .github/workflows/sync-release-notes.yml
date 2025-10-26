@@ -31,12 +31,10 @@ jobs:
           FOLDER="Official Claude Releases"
           mkdir -p "$FOLDER"
 
+          # ✅ FIXED: Using only working raw GitHub URLs
+          # The docs.anthropic.com URLs don't serve raw markdown, so they've been removed
           FILES=(
             "https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md|CHANGELOG.md"
-            "https://docs.anthropic.com/en/release-notes/api.md|api.md"
-            "https://docs.anthropic.com/en/release-notes/claude-apps.md|claude-apps.md"
-            "https://docs.anthropic.com/en/release-notes/system-prompts.md|system-prompts.md"
-            "https://docs.anthropic.com/en/release-notes/claude-code.md|claude-code.md"
           )
 
           CHANGED_FILES=()
