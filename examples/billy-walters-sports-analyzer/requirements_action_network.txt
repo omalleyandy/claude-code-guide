@@ -1,0 +1,5 @@
+# Action Network Client Dependencies
+# Install with: uv add <package>
+
+playwright>=1.40.0
+pydantic>=2.5.0

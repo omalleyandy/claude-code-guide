@@ -1,0 +1,18 @@
+# Billy Walters Sports Analyzer - API Integration Requirements
+# Install all with: uv add playwright pydantic httpx
+
+# Web scraping (Action Network)
+playwright>=1.40.0
+
+# Data validation and modeling
+pydantic>=2.5.0
+
+# Async HTTP client (Overtime, Weather APIs)
+httpx>=0.25.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Note: Install Playwright browsers separately:
+# uv run playwright install chromium
