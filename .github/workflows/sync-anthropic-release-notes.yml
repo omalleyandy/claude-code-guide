@@ -184,4 +184,8 @@ jobs:
             git commit -m "$TITLE" -m "No release-note content changes; updated status in '$README_PATH'."
           fi
 
+          # Fetch and rebase to avoid push rejection if remote has new commits
+          git fetch origin main
+          git rebase origin/main
+
           git push
