@@ -14,7 +14,8 @@ The status section below is updated by a daily GitHub Action.
 
 ### ✅ Files updated this run
 
-- CHANGELOG.md (+7 / -0)<!-- sync-status:end -->
+- claude-code-CHANGELOG.md (+26 / -0)<!-- sync-status:end -->
+
 
 
 
