@@ -9,12 +9,13 @@ The status section below is updated by a daily GitHub Action.
 <!-- sync-status:start -->
 
 ### 🔄 Last sync
-- UTC: `2025-12-05 02:19 UTC`
-- Europe/Oslo: `2025-12-05 03:19 CET`
+- UTC: `2025-12-06 02:08 UTC`
+- Europe/Oslo: `2025-12-06 03:08 CET`
 
 ### ✅ Files updated this run
 
-- CHANGELOG.md (+6 / -0)<!-- sync-status:end -->
+- CHANGELOG.md (+9 / -0)<!-- sync-status:end -->
+
 
 
 
