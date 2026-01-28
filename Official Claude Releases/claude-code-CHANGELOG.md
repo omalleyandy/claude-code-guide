@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.21
+
+- Added support for full-width (zenkaku) number input from Japanese IME in option selection prompts
+- Fixed shell completion cache files being truncated on exit
+- Fixed API errors when resuming sessions that were interrupted during tool execution
+- Fixed auto-compact triggering too early on models with large output token limits
+- Fixed task IDs potentially being reused after deletion
+- Fixed file search not working in VS Code extension on Windows
+- Improved read/search progress indicators to show "Reading…" while in progress and "Read" when complete
+- Improved Claude to prefer file operation tools (Read, Edit, Write) over bash equivalents (cat, sed, awk)
+- [VSCode] Added automatic Python virtual environment activation, ensuring `python` and `pip` commands use the correct interpreter (configurable via `claudeCode.usePythonEnvironment` setting)
+- [VSCode] Fixed message action buttons having incorrect background colors
+
 ## 2.1.20
 
 - Added arrow key history navigation in vim normal mode when cursor cannot move further
@@ -24,7 +37,6 @@
 - Improved task list to dynamically adjust visible items based on terminal height
 - Improved fork conversation hint to show how to resume the original session
 - Changed collapsed read/search groups to show present tense ("Reading", "Searching for") while in progress, and past tense ("Read", "Searched for") when complete
-- Changed teammate messages to render with rich Markdown formatting (bold, code blocks, lists, etc.) instead of plain text
 - Changed `ToolSearch` results to appear as a brief notification instead of inline in the conversation
 - Changed the `/commit-push-pr` skill to automatically post PR URLs to Slack channels when configured via MCP tools
 - Changed the `/copy` command to be available to all users
