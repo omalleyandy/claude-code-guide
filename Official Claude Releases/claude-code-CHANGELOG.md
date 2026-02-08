@@ -1,5 +1,88 @@
 # Changelog
 
+## 2.1.37
+
+- Fixed an issue where /fast was not immediately available after enabling /extra-usage
+
+## 2.1.36
+
+- Fast mode is now available for Opus 4.6. Learn more at https://code.claude.com/docs/en/fast-mode
+
+## 2.1.34
+
+- Fixed a crash when agent teams setting changed between renders
+- Fixed a bug where commands excluded from sandboxing (via `sandbox.excludedCommands` or `dangerouslyDisableSandbox`) could bypass the Bash ask permission rule when `autoAllowBashIfSandboxed` was enabled
+
+## 2.1.33
+
+- Fixed agent teammate sessions in tmux to send and receive messages
+- Fixed warnings about agent teams not being available on your current plan
+- Added `TeammateIdle` and `TaskCompleted` hook events for multi-agent workflows
+- Added support for restricting which sub-agents can be spawned via `Task(agent_type)` syntax in agent "tools" frontmatter
+- Added `memory` frontmatter field support for agents, enabling persistent memory with `user`, `project`, or `local` scope
+- Added plugin name to skill descriptions and `/skills` menu for better discoverability
+- Fixed an issue where submitting a new message while the model was in extended thinking would interrupt the thinking phase
+- Fixed an API error that could occur when aborting mid-stream, where whitespace text combined with a thinking block would bypass normalization and produce an invalid request
+- Fixed API proxy compatibility issue where 404 errors on streaming endpoints no longer triggered non-streaming fallback
+- Fixed an issue where proxy settings configured via `settings.json` environment variables were not applied to WebFetch and other HTTP requests on the Node.js build
+- Fixed `/resume` session picker showing raw XML markup instead of clean titles for sessions started with slash commands
+- Improved error messages for API connection failures — now shows specific cause (e.g., ECONNREFUSED, SSL errors) instead of generic "Connection error"
+- Errors from invalid managed settings are now surfaced
+- VSCode: Added support for remote sessions, allowing OAuth users to browse and resume sessions from claude.ai
+- VSCode: Added git branch and message count to the session picker, with support for searching by branch name
+- VSCode: Fixed scroll-to-bottom under-scrolling on initial session load and session switch
+
+## 2.1.32
+
+- Claude Opus 4.6 is now available!
+- Added research preview agent teams feature for multi-agent collaboration (token-intensive feature, requires setting CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1)
+- Claude now automatically records and recalls memories as it works
+- Added "Summarize from here" to the message selector, allowing partial conversation summarization.
+- Skills defined in `.claude/skills/` within additional directories (`--add-dir`) are now loaded automatically.
+- Fixed `@` file completion showing incorrect relative paths when running from a subdirectory
+- Updated --resume to re-use --agent value specified in previous conversation by default.
+- Fixed: Bash tool no longer throws "Bad substitution" errors when heredocs contain JavaScript template literals like `${index + 1}`, which previously interrupted tool execution
+- Skill character budget now scales with context window (2% of context), so users with larger context windows can see more skill descriptions without truncation
+- Fixed Thai/Lao spacing vowels (สระ า, ำ) not rendering correctly in the input field
+- VSCode: Fixed slash commands incorrectly being executed when pressing Enter with preceding text in the input field
+- VSCode: Added spinner when loading past conversations list
+
+## 2.1.31
+
+- Added session resume hint on exit, showing how to continue your conversation later
+- Added support for full-width (zenkaku) space input from Japanese IME in checkbox selection
+- Fixed PDF too large errors permanently locking up sessions, requiring users to start a new conversation
+- Fixed bash commands incorrectly reporting failure with "Read-only file system" errors when sandbox mode was enabled
+- Fixed a crash that made sessions unusable after entering plan mode when project config in `~/.claude.json` was missing default fields
+- Fixed `temperatureOverride` being silently ignored in the streaming API path, causing all streaming requests to use the default temperature (1) regardless of the configured override
+- Fixed LSP shutdown/exit compatibility with strict language servers that reject null params
+- Improved system prompts to more clearly guide the model toward using dedicated tools (Read, Edit, Glob, Grep) instead of bash equivalents (`cat`, `sed`, `grep`, `find`), reducing unnecessary bash command usage
+- Improved PDF and request size error messages to show actual limits (100 pages, 20MB)
+- Reduced layout jitter in the terminal when the spinner appears and disappears during streaming
+- Removed misleading Anthropic API pricing from model selector for third-party provider (Bedrock, Vertex, Foundry) users
+
+## 2.1.30
+
+- Added `pages` parameter to the Read tool for PDFs, allowing specific page ranges to be read (e.g., `pages: "1-5"`). Large PDFs (>10 pages) now return a lightweight reference when `@` mentioned instead of being inlined into context.
+- Added pre-configured OAuth client credentials for MCP servers that don't support Dynamic Client Registration (e.g., Slack). Use `--client-id` and `--client-secret` with `claude mcp add`.
+- Added `/debug` for Claude to help troubleshoot the current session
+- Added support for additional `git log` and `git show` flags in read-only mode (e.g., `--topo-order`, `--cherry-pick`, `--format`, `--raw`)
+- Added token count, tool uses, and duration metrics to Task tool results
+- Added reduced motion mode to the config
+- Fixed phantom "(no content)" text blocks appearing in API conversation history, reducing token waste and potential model confusion
+- Fixed prompt cache not correctly invalidating when tool descriptions or input schemas changed, only when tool names changed
+- Fixed 400 errors that could occur after running `/login` when the conversation contained thinking blocks
+- Fixed a hang when resuming sessions with corrupted transcript files containing `parentUuid` cycles
+- Fixed rate limit message showing incorrect "/upgrade" suggestion for Max 20x users when extra-usage is unavailable
+- Fixed permission dialogs stealing focus while actively typing
+- Fixed subagents not being able to access SDK-provided MCP tools because they were not synced to the shared application state
+- Fixed a regression where Windows users with a `.bashrc` file could not run bash commands
+- Improved memory usage for `--resume` (68% reduction for users with many sessions) by replacing the session index with lightweight stat-based loading and progressive enrichment
+- Improved `TaskStop` tool to display the stopped command/task description in the result line instead of a generic "Task stopped" message
+- Changed `/model` to execute immediately instead of being queued
+- [VSCode] Added multiline input support to the "Other" text input in question dialogs (use Shift+Enter for new lines)
+- [VSCode] Fixed duplicate sessions appearing in the session list when starting a new conversation
+
 ## 2.1.29
 
 - Fixed startup performance issues when resuming sessions that have `saved_hook_context`
